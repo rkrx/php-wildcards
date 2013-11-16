@@ -13,6 +13,11 @@ class Pattern {
 	private $regEx = array();
 
 	/**
+	 * @var callable
+	 */
+	private $func = null;
+
+	/**
 	 * @param static
 	 * @return static
 	 */
@@ -33,10 +38,8 @@ class Pattern {
 	 * @return bool
 	 */
 	public function match($string) {
-		if($string == $this->pattern) {
-			return true;
-		}
-		return preg_match("/^{$this->regEx}$/", $string);
+		$func = $this->func;
+		return $func($string);
 	}
 
 	/**
@@ -45,6 +48,45 @@ class Pattern {
 	 */
 	private function convert($pattern) {
 		$pattern = preg_replace('/\\*+/', '*', $pattern);
+		
+		if(preg_match('/^[^\\*]+\\*$/', $pattern) && strpos($pattern, '?') === false) {
+			$this->initStartsWith($pattern);
+		} elseif(preg_match('/^\\*[^\\*]+$/', $pattern) && strpos($pattern, '?') === false) {
+			$this->initEndsWith($pattern);
+		} else {
+			$this->initRegExp($pattern);
+		}
+	}
+
+	/**
+	 * @param $pattern
+	 * @return string
+	 */
+	private function initStartsWith($pattern) {
+		$pattern = rtrim($pattern, '*');
+		$this->func = function ($string) use ($pattern) {
+			$patternLength = strlen($pattern);
+			return substr($string, 0, $patternLength) == $pattern;
+		};
+	}
+
+	/**
+	 * @param $pattern
+	 * @return string
+	 */
+	private function initEndsWith($pattern) {
+		$pattern = ltrim($pattern, '*');
+		$this->func = function ($string) use ($pattern) {
+			$stringLength = strlen($string);
+			$patternLength = strlen($pattern);
+			return substr($string, $stringLength - $patternLength, $patternLength) == $pattern;
+		};
+	}
+
+	/**
+	 * @param $pattern
+	 */
+	private function initRegExp($pattern) {
 		$parts = preg_split('/([\\?\\*])/', $pattern, -1, PREG_SPLIT_DELIM_CAPTURE);
 		foreach($parts as &$part) {
 			switch($part) {
@@ -58,6 +100,9 @@ class Pattern {
 					$part = preg_quote($part, '/');
 			}
 		}
-		return join('', $parts);
+		$pattern = join('', $parts);
+		$this->func = function ($string) use ($pattern) {
+			return !!preg_match("/^{$pattern}$/", $string);
+		};
 	}
 } 
