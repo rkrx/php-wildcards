@@ -1,0 +1,11 @@
+<phpunit bootstrap="inc/bootstrap.php"
+		 backupGlobals="false"
+		 backupStaticAttributes="false"
+		 strict="true"
+		 verbose="true">
+	<testsuites>
+		<testsuite name="Wildcard Matcher">
+			<file>tests/Kir/StringUtils/Matching/Wildcards/PatternTest.php</file>
+		</testsuite>
+	</testsuites>
+</phpunit>
