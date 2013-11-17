@@ -3,19 +3,16 @@ namespace Kir\StringUtils\Matching\Wildcards;
 
 class Pattern {
 	/**
-	 * @var string
-	 */
-	private $pattern = null;
-
-	/**
-	 * @var string
-	 */
-	private $regEx = array();
-
-	/**
 	 * @var callable
 	 */
 	private $func = null;
+
+	/**
+	 * PHP 5.3 can't use $this in closures
+	 * 
+	 * @var array
+	 */
+	private $helpers = array();
 
 	/**
 	 * @param static
@@ -29,8 +26,8 @@ class Pattern {
 	 * @param string $pattern
 	 */
 	public function __construct($pattern) {
-		$this->pattern = $pattern;
-		$this->regEx = $this->convert($pattern);
+		$this->initHelpers();
+		$this->compile($pattern);
 	}
 
 	/**
@@ -44,29 +41,42 @@ class Pattern {
 
 	/**
 	 * @param string $pattern
-	 * @return array
 	 */
-	private function convert($pattern) {
+	private function compile($pattern) {
 		$pattern = preg_replace('/\\*+/', '*', $pattern);
-		
-		if(preg_match('/^[^\\*]+\\*$/', $pattern) && strpos($pattern, '?') === false) {
+
+		if (preg_match('/^[^\\*]+\\*$/', $pattern) && strpos($pattern, '?') === false) {
 			$this->initStartsWith($pattern);
-		} elseif(preg_match('/^\\*[^\\*]+$/', $pattern) && strpos($pattern, '?') === false) {
+		} elseif (preg_match('/^\\*[^\\*]+$/', $pattern) && strpos($pattern, '?') === false) {
 			$this->initEndsWith($pattern);
+		} elseif (preg_match('/^[^\\*]+\\*[^\\*]+$/', $pattern) && strpos($pattern, '?') === false) {
+			$this->initStartsAndEndsWith($pattern);
 		} else {
 			$this->initRegExp($pattern);
 		}
 	}
 
 	/**
-	 * @param $pattern
+	 * @param $startsWith
 	 * @return string
 	 */
-	private function initStartsWith($pattern) {
-		$pattern = rtrim($pattern, '*');
-		$this->func = function ($string) use ($pattern) {
-			$patternLength = strlen($pattern);
-			return substr($string, 0, $patternLength) == $pattern;
+	private function initStartsWith($startsWith) {
+		$startsWith = rtrim($startsWith, '*');
+		$startsWithFunc = $this->helpers['startsWith'];
+		$this->func = function ($string) use ($startsWith, $startsWithFunc) {
+			return $startsWithFunc($string, $startsWith);
+		};
+	}
+
+	/**
+	 * @param $endsWith
+	 * @return string
+	 */
+	private function initEndsWith($endsWith) {
+		$endsWith = ltrim($endsWith, '*');
+		$endsWithFunc = $this->helpers['endsWith'];
+		$this->func = function ($string) use ($endsWith, $endsWithFunc) {
+			return $endsWithFunc($string, $endsWith);
 		};
 	}
 
@@ -74,12 +84,17 @@ class Pattern {
 	 * @param $pattern
 	 * @return string
 	 */
-	private function initEndsWith($pattern) {
-		$pattern = ltrim($pattern, '*');
-		$this->func = function ($string) use ($pattern) {
+	private function initStartsAndEndsWith($pattern) {
+		list($startsWith, $endsWith) = explode('*', $pattern);
+		$startsWithFunc = $this->helpers['startsWith'];
+		$endsWithFunc = $this->helpers['endsWith'];
+		$this->func = function ($string) use ($startsWith, $startsWithFunc, $endsWith, $endsWithFunc) {
 			$stringLength = strlen($string);
-			$patternLength = strlen($pattern);
-			return substr($string, $stringLength - $patternLength, $patternLength) == $pattern;
+			$bothLength = strlen($startsWith) + strlen($endsWith);
+			if ($bothLength > $stringLength) {
+				return false;
+			}
+			return $startsWithFunc($string, $startsWith) && $endsWithFunc($string, $endsWith);
 		};
 	}
 
@@ -88,8 +103,8 @@ class Pattern {
 	 */
 	private function initRegExp($pattern) {
 		$parts = preg_split('/([\\?\\*])/', $pattern, -1, PREG_SPLIT_DELIM_CAPTURE);
-		foreach($parts as &$part) {
-			switch($part) {
+		foreach ($parts as &$part) {
+			switch ($part) {
 				case '*':
 					$part = '.*';
 					break;
@@ -103,6 +118,32 @@ class Pattern {
 		$pattern = join('', $parts);
 		$this->func = function ($string) use ($pattern) {
 			return !!preg_match("/^{$pattern}$/", $string);
+		};
+	}
+
+	/**
+	 * PHP 5.3 can't use $this in closures
+	 */
+	private function initHelpers() {
+		/**
+		 * @param string $haystack
+		 * @param string $needle
+		 * @return bool
+		 */
+		$this->helpers['startsWith'] = function ($haystack, $needle) {
+			$needleLen = strlen($needle);
+			return substr($haystack, 0, $needleLen) == $needle;
+		};
+		
+		/**
+		 * @param string $haystack
+		 * @param string $needle
+		 * @return bool
+		 */
+		$this->helpers['endsWith'] = function ($haystack, $needle) {
+			$haystackLen = strlen($haystack);
+			$needleLen = strlen($needle);
+			return substr($haystack, $haystackLen - $needleLen, $needleLen) == $needle;
 		};
 	}
 } 
