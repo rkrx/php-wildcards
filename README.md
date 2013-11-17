@@ -9,10 +9,10 @@ Why not just use regular expressions?
 
 Because there is no reason to use regular expressions for the most common figures:
 
-`string*` means "starts with".
+`string*` means "starts with".<br />
 `*string` means "ends with".
 
-So even if I use regular expressions to cover complex patterns, it is too simple to use regular expressions for one of these. If you like to provide more speedups for such simple patterns, feel free to push me some.
+So even if I use regular expressions to cover complex patterns, it is too simple to use regular expressions for one of these. Internally I use substr() instead. If you like to provide more speedups for such simple patterns, feel free to push me some.
  
 
 Example:
