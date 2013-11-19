@@ -3,7 +3,7 @@ namespace Kir\StringUtils\Matching\Wildcards;
 
 class Pattern {
 	/**
-	 * @var callable
+	 * @var \Closure
 	 */
 	private $func = null;
 
