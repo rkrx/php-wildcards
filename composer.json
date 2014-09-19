@@ -17,8 +17,13 @@
 		"phpunit/phpunit": "3.7.*"
 	},
 	"autoload": {
-		"psr-0": {
-			"Kir\\StringUtils\\Matching\\Wildcards": "src/"
+		"psr-4": {
+			"Kir\\StringUtils\\Matching\\Wildcards\\": "src/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Kir\\StringUtils\\Matching\\Wildcards\\": ["src/", "tests/"]
 		}
 	}
 }

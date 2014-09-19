@@ -5,7 +5,7 @@
 		 verbose="true">
 	<testsuites>
 		<testsuite name="Wildcard Matcher">
-			<file>tests/Kir/StringUtils/Matching/Wildcards/PatternTest.php</file>
+			<file>tests/PatternTest.php</file>
 		</testsuite>
 	</testsuites>
 </phpunit>
