@@ -1,5 +1,7 @@
 Simple wildcard component (PHP 5.3+)
-=========================
+====================================
+
+[![Build Status](https://travis-ci.org/rkrx/php-wildcards.svg)](https://travis-ci.org/rkrx/php-wildcards)
 
 This project aims to provide a dead simple component for php to support wildcards. Wildcards are * (zero or more character) and ? (exactly one character). The component is not tied to filenames. You can use it also for namespaces, urls and other strings.
 
